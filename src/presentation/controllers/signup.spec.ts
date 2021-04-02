@@ -9,28 +9,14 @@ interface TypesSUT {
   emailValidatorStub: IEmailValidator
 }
 
-const makeEmailValidator = (): IEmailValidator => {
-  class EmailValidatorStub implements IEmailValidator {
-    isValid (email: string): boolean {
-      return true
-    }
+class EmailValidatorStub implements IEmailValidator {
+  isValid (email: string): boolean {
+    return true
   }
-
-  return new EmailValidatorStub()
-}
-
-const makeEmailValidatorWithError = (): IEmailValidator => {
-  class EmailValidatorStub implements IEmailValidator {
-    isValid (email: string): boolean {
-      throw new Error()
-    }
-  }
-
-  return new EmailValidatorStub()
 }
 
 const makeSUT = (): TypesSUT => {
-  const emailValidatorStub = makeEmailValidator()
+  const emailValidatorStub = new EmailValidatorStub()
   const sut = new SignUpController(emailValidatorStub)
 
   return {
@@ -126,6 +112,7 @@ describe('SignUp Controller', () => {
   it('should call EmailValidator with the same email', () => {
     const password = faker.internet.password()
     const email = faker.internet.email()
+
     const { sut, emailValidatorStub } = makeSUT()
     const isValidEmail = jest.spyOn(emailValidatorStub, 'isValid')
 
@@ -143,21 +130,22 @@ describe('SignUp Controller', () => {
   })
 
   it('should send 500 status if EmailValidator throws an error', () => {
-    const emailValidatorStub = makeEmailValidatorWithError()
-    const sut = new SignUpController(emailValidatorStub)
-
     const password = faker.internet.password()
-    const email = faker.internet.email()
+
+    const { sut, emailValidatorStub } = makeSUT()
+    jest.spyOn(emailValidatorStub, 'isValid').mockImplementationOnce(() => { throw new Error() })
 
     const httpRequest = {
       body: {
         name: faker.name.findName(),
-        email,
+        email: faker.internet.email(),
         password,
         passwordConfirmation: password
       }
     }
+
     const httpResponse = sut.handle(httpRequest)
+
     expect(httpResponse.statusCode).toBe(500)
     expect(httpResponse.body).toEqual(new ServerError())
   })

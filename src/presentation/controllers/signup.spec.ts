@@ -1,13 +1,10 @@
 import { SignUpController } from './signup'
 import { MissingParamError, InvalidParamError, ServerError } from '../errors'
 import { IEmailValidator } from '../protocols'
+import { AddAccount, IAddAccountDTO } from '../../domain/usecases/add-account'
+import { AccountModel } from '../../domain/model/account'
 
 import faker from 'faker'
-
-interface TypesSUT {
-  sut: SignUpController
-  emailValidatorStub: IEmailValidator
-}
 
 class EmailValidatorStub implements IEmailValidator {
   isValid (email: string): boolean {
@@ -15,13 +12,32 @@ class EmailValidatorStub implements IEmailValidator {
   }
 }
 
+class AddAccountStub implements AddAccount {
+  add (account: IAddAccountDTO): AccountModel {
+    return {
+      id: 'valid_id',
+      name: 'valid_name',
+      email: 'valid_email@email.com',
+      password: 'valid_password'
+    }
+  }
+}
+
+interface TypesSUT {
+  sut: SignUpController
+  emailValidatorStub: IEmailValidator
+  addAccountStub: AddAccount
+}
+
 const makeSUT = (): TypesSUT => {
   const emailValidatorStub = new EmailValidatorStub()
-  const sut = new SignUpController(emailValidatorStub)
+  const addAccountStub = new AddAccountStub()
+  const sut = new SignUpController(emailValidatorStub, addAccountStub)
 
   return {
     sut,
-    emailValidatorStub
+    emailValidatorStub,
+    addAccountStub
   }
 }
 
@@ -145,6 +161,26 @@ describe('SignUp Controller', () => {
     sut.handle(httpRequest)
 
     expect(isValidEmail).toHaveBeenCalledWith(email)
+  })
+
+  it('should call AddAccount with correct values', () => {
+    const name = faker.name.findName()
+    const email = faker.internet.email()
+    const password = faker.internet.password()
+
+    const { sut, addAccountStub } = makeSUT()
+    const addAccount = jest.spyOn(addAccountStub, 'add')
+
+    const httpRequest = {
+      body: {
+        name,
+        email,
+        password,
+        passwordConfirmation: password
+      }
+    }
+    sut.handle(httpRequest)
+    expect(addAccount).toHaveBeenCalledWith({ name, email, password })
   })
 
   it('should send 500 status if EmailValidator throws an error', () => {

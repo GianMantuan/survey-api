@@ -2,6 +2,7 @@ import { SignUpController } from './signup'
 import { MissingParamError } from '../errors/missing-param'
 import { InvalidParamError } from '../errors/invalid-param'
 import { IEmailValidator } from '../protocols/email-validator'
+import { ServerError } from '../errors/server-error'
 
 import faker from 'faker'
 
@@ -26,7 +27,7 @@ const makeSUT = (): TypesSUT => {
 }
 
 describe('SignUp Controller', () => {
-  it('should return 400 if no name is provided', () => {
+  it('should send 400 status if no name is provided', () => {
     const password = faker.internet.password()
     const { sut } = makeSUT()
     const httpRequest = {
@@ -42,7 +43,7 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('name'))
   })
 
-  it('should return 400 if no email is provided', () => {
+  it('should send 400 status if no email is provided', () => {
     const password = faker.internet.password()
     const { sut } = makeSUT()
     const httpRequest = {
@@ -58,7 +59,7 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('email'))
   })
 
-  it('should return 400 if no password is provided', () => {
+  it('should send 400 status if no password is provided', () => {
     const password = faker.internet.password()
     const { sut } = makeSUT()
     const httpRequest = {
@@ -74,7 +75,7 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('password'))
   })
 
-  it('should return 400 if no passwordConfirmation is provided', () => {
+  it('should send 400 status if no passwordConfirmation is provided', () => {
     const password = faker.internet.password()
     const { sut } = makeSUT()
     const httpRequest = {
@@ -90,7 +91,7 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('passwordConfirmation'))
   })
 
-  it('should return 400 if an invalid email is provided', () => {
+  it('should send 400 status if an invalid email is provided', () => {
     const password = faker.internet.password()
     const { sut, emailValidatorStub } = makeSUT()
     jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
@@ -126,5 +127,31 @@ describe('SignUp Controller', () => {
     sut.handle(httpRequest)
 
     expect(isValidEmail).toHaveBeenCalledWith(email)
+  })
+
+  it('should send 500 status if EmailValidator throws an error', () => {
+    class EmailValidatorStub implements IEmailValidator {
+      isValid (email: string): boolean {
+        throw new Error()
+      }
+    }
+
+    const emailValidatorStub = new EmailValidatorStub()
+    const sut = new SignUpController(emailValidatorStub)
+
+    const password = faker.internet.password()
+    const email = faker.internet.email()
+
+    const httpRequest = {
+      body: {
+        name: faker.name.findName(),
+        email,
+        password,
+        passwordConfirmation: password
+      }
+    }
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 })

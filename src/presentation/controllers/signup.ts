@@ -4,7 +4,7 @@ import { badRequest } from '../helpers/http-helper'
 
 export class SignUpController {
   handle (httpRequest: IHttpRequest): IHttpResponse {
-    const requiredFileds = ['name', 'email', 'password']
+    const requiredFileds = ['name', 'email', 'password', 'passwordConfirmation']
     for (const field of requiredFileds) {
       if (!httpRequest.body[field]) {
         return badRequest(new MissingParamError(field))

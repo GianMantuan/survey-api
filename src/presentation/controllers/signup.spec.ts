@@ -3,10 +3,12 @@ import { MissingParamError } from '../errors/missing-param'
 
 import faker from 'faker'
 
+const makeSUT = (): SignUpController => (new SignUpController())
+
 describe('SignUp COntroller', () => {
   it('should return 400 if no name is provided', () => {
     const password = faker.internet.password()
-    const sut = new SignUpController()
+    const sut = makeSUT()
     const httpRequest = {
       body: {
         email: faker.internet.email(),
@@ -22,7 +24,7 @@ describe('SignUp COntroller', () => {
 
   it('should return 400 if no email is provided', () => {
     const password = faker.internet.password()
-    const sut = new SignUpController()
+    const sut = makeSUT()
     const httpRequest = {
       body: {
         name: faker.name.findName(),
@@ -37,7 +39,7 @@ describe('SignUp COntroller', () => {
   })
   it('should return 400 if no password is provided', () => {
     const password = faker.internet.password()
-    const sut = new SignUpController()
+    const sut = makeSUT()
     const httpRequest = {
       body: {
         name: faker.name.findName(),
@@ -52,7 +54,7 @@ describe('SignUp COntroller', () => {
   })
   it('should return 400 if no passwordConfirmation is provided', () => {
     const password = faker.internet.password()
-    const sut = new SignUpController()
+    const sut = makeSUT()
     const httpRequest = {
       body: {
         name: faker.name.findName(),

@@ -141,46 +141,6 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new InvalidParamError('email'))
   })
 
-  it('should call EmailValidator with the same email', () => {
-    const password = faker.internet.password()
-    const email = faker.internet.email()
-
-    const { sut, emailValidatorStub } = makeSUT()
-    const isValidEmail = jest.spyOn(emailValidatorStub, 'isValid')
-
-    const httpRequest = {
-      body: {
-        name: faker.name.findName(),
-        email,
-        password,
-        passwordConfirmation: password
-      }
-    }
-    sut.handle(httpRequest)
-
-    expect(isValidEmail).toHaveBeenCalledWith(email)
-  })
-
-  it('should call AddAccount with correct values', () => {
-    const name = faker.name.findName()
-    const email = faker.internet.email()
-    const password = faker.internet.password()
-
-    const { sut, addAccountStub } = makeSUT()
-    const addAccount = jest.spyOn(addAccountStub, 'add')
-
-    const httpRequest = {
-      body: {
-        name,
-        email,
-        password,
-        passwordConfirmation: password
-      }
-    }
-    sut.handle(httpRequest)
-    expect(addAccount).toHaveBeenCalledWith({ name, email, password })
-  })
-
   it('should send 500 status if EmailValidator throws an error', () => {
     const password = faker.internet.password()
 
@@ -221,5 +181,62 @@ describe('SignUp Controller', () => {
 
     expect(httpResponse.statusCode).toBe(500)
     expect(httpResponse.body).toEqual(new ServerError())
+  })
+
+  it('should call EmailValidator with the same email', () => {
+    const password = faker.internet.password()
+    const email = faker.internet.email()
+
+    const { sut, emailValidatorStub } = makeSUT()
+    const isValidEmail = jest.spyOn(emailValidatorStub, 'isValid')
+
+    const httpRequest = {
+      body: {
+        name: faker.name.findName(),
+        email,
+        password,
+        passwordConfirmation: password
+      }
+    }
+    sut.handle(httpRequest)
+
+    expect(isValidEmail).toHaveBeenCalledWith(email)
+  })
+
+  it('should call AddAccount with correct values', () => {
+    const name = faker.name.findName()
+    const email = faker.internet.email()
+    const password = faker.internet.password()
+
+    const { sut, addAccountStub } = makeSUT()
+    const addAccount = jest.spyOn(addAccountStub, 'add')
+
+    const httpRequest = {
+      body: {
+        name,
+        email,
+        password,
+        passwordConfirmation: password
+      }
+    }
+    sut.handle(httpRequest)
+    expect(addAccount).toHaveBeenCalledWith({ name, email, password })
+  })
+
+  it('should send 200 status if a valid account is provided', () => {
+    const { sut } = makeSUT()
+
+    const httpRequest = {
+      body: {
+        name: 'valid_name',
+        email: 'valid_email@email.com',
+        password: 'valid_password',
+        passwordConfirmation: 'valid_password'
+      }
+    }
+    const httpResponse = sut.handle(httpRequest)
+    console.log(httpResponse)
+    expect(httpResponse.statusCode).toBe(200)
+    expect(httpResponse.body).toEqual({ id: 'valid_id', name: 'valid_name', email: 'valid_email@email.com', password: 'valid_password' })
   })
 })
